@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>sevencwi</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky wordmark bar, category tabs, two-up product grid on phones, photo-price strip between grid and footer */
+:root {
+  --bg: #E8EAE7;
+  --surface: #F3F4F1;
+  --ink: #0F1113;
+  --muted: #5B6168;
+  --line: #C9CDC8;
+  --accent: #2B3BFF;
+  --accent-ink: #FFFFFF;
+  --tile: #D9DDD6;
+  --ok: #1E7A3C;
+  --bad: #B3261E;
+  --font-display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --font-body: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D0F11; --surface: #15181B; --ink: #EEF0EC; --muted: #9AA1A7; --line: #2A2F34;
+    --accent: #8D98FF; --accent-ink: #0D0F11; --tile: #1C2024; --ok: #5CCB84; --bad: #FF8A80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D0F11; --surface: #15181B; --ink: #EEF0EC; --muted: #9AA1A7; --line: #2A2F34;
+  --accent: #8D98FF; --accent-ink: #0D0F11; --tile: #1C2024; --ok: #5CCB84; --bad: #FF8A80;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--bg);
+}
+.wrap {
+  max-width: 1100px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Top bar */
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 9;
+  background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.bar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; }
+.brand { font-family: var(--font-display); font-weight: 800; font-size: 22px; letter-spacing: -0.02em; text-decoration: none; }
+.tg-link {
+  font-family: var(--font-mono); font-size: 13px; text-decoration: none;
+  border: 1px solid var(--ink); padding: 6px 12px; border-radius: 2px;
+}
+.tg-link:hover { background: var(--ink); color: var(--bg); }
+
+/* Intro */
+.intro { padding-block: 28px 8px; }
+.intro h1 {
+  font-family: var(--font-display); font-weight: 700; font-size: clamp(24px, 6vw, 40px);
+  line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 12px; max-width: 18ch; text-wrap: balance;
+}
+.intro p { margin: 0; color: var(--muted); max-width: 52ch; }
+
+/* Tabs */
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; padding-block: 20px 16px; }
+.tab {
+  font: 500 14px var(--font-body); color: var(--ink); background: transparent;
+  border: 1px solid var(--line); padding: 8px 14px; border-radius: 2px; cursor: pointer;
+}
+.tab:hover { border-color: var(--ink); }
+.tab[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tab .n { font-family: var(--font-mono); font-size: 12px; opacity: 0.65; margin-left: 6px; }
+
+/* Grid */
+.grid {
+  display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
+  padding-bottom: 32px;
+}
+@media (min-width: 700px) { .grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; } }
+.card { background: var(--surface); border: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; }
+.tile {
+  position: relative; aspect-ratio: 4 / 5; background: var(--tile);
+  display: grid; place-items: center; overflow: hidden; max-width: 100%;
+}
+.tile svg { width: 56%; height: auto; fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.code { position: absolute; left: 10px; top: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+.soon { position: absolute; left: 10px; bottom: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.flag {
+  position: absolute; right: 10px; top: 10px; font-family: var(--font-mono); font-size: 11px;
+  background: var(--ink); color: var(--bg); padding: 2px 8px; border-radius: 2px;
+}
+.body { display: flex; flex-direction: column; gap: 10px; padding: 12px; flex: 1; min-width: 0; }
+.name { font-weight: 600; font-size: 15px; line-height: 1.3; margin: 0; text-wrap: balance; }
+.desc { margin: 0; color: var(--muted); font-size: 13px; }
+.price { font-family: var(--font-mono); font-weight: 500; font-size: 16px; font-variant-numeric: tabular-nums; }
+.sizes { display: flex; flex-wrap: wrap; gap: 6px; }
+.size {
+  font: 500 12px var(--font-mono); min-width: 38px; padding: 6px 8px; text-align: center;
+  background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 2px; cursor: pointer;
+}
+.size:hover { border-color: var(--ink); }
+.size[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.spacer { flex: 1; }
+.buy {
+  display: block; text-align: center; text-decoration: none; font-weight: 600; font-size: 14px;
+  background: var(--accent); color: var(--accent-ink); padding: 11px 12px; border-radius: 2px;
+}
+.buy:hover { filter: brightness(1.08); }
+.buy[aria-disabled="true"] { background: transparent; color: var(--muted); border: 1px dashed var(--line); cursor: default; filter: none; }
+.stock { font-size: 12px; color: var(--muted); }
+.stock b { font-weight: 500; }
+.stock .yes { color: var(--ok); }
+.stock .no { color: var(--bad); }
+
+/* Photo strip */
+.photo-strip {
+  border: 1px solid var(--ink); padding: 20px; margin-bottom: 40px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;
+}
+.photo-strip h2 { font-family: var(--font-display); font-size: 18px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 4px; }
+.photo-strip p { margin: 0; color: var(--muted); font-size: 14px; max-width: 46ch; }
+.photo-strip .buy { padding-inline: 20px; }
+
+footer { border-top: 1px solid var(--line); padding-block: 20px 28px; color: var(--muted); font-size: 13px; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+footer .mono { font-family: var(--font-mono); }
+.empty { padding: 40px 0; color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) {
+  .card { transition: border-color .15s; }
+  .card:hover { border-color: var(--ink); }
+}
+</style>
+<style>body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+
+
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="#top">sevencwi</a>
+    <a class="tg-link" id="tgTop" href="#" target="_blank" rel="noopener">Telegram</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="intro wrap">
+    <h1>Одежда, обувь и аксессуары</h1>
+    <p>Выберите товар и размер, нажмите «Заказать». Заказ придёт нам в Telegram, и мы свяжемся с вами.</p>
+  </section>
+
+  <div class="wrap">
+    <div class="tabs" id="tabs" role="group" aria-label="Категории"></div>
+    <div class="grid" id="grid"></div>
+
+    <section class="photo-strip">
+      <div>
+        <h2>Есть фото вещи? Узнайте цену</h2>
+        <p>Напишите нам в Telegram и прикрепите фото. Назовём цену и наличие.</p>
+      </div>
+      <a class="buy" id="tgPhoto" href="#" target="_blank" rel="noopener">Отправить фото</a>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>sevencwi</span>
+    <span class="mono" id="tgFoot"></span>
+  </div>
+</footer>
+
+<script>
+/* ===== Настройки магазина. Меняйте только этот блок. ===== */
+var TG_USERNAME = "sevencwi77";   // username в Telegram, куда придут заказы (без @)
+var PRODUCTS = [
+  { id: 1, category: "Одежда",     name: "Худи с принтом на спине", price: 250000, sizes: ["S","M","L","XL"], desc: "Плотный хлопок. Надпись на спине.", photo: "", inStock: true },
+  { id: 2, category: "Одежда",     name: "Футболка оверсайз",       price: 120000, sizes: ["M","L","XL"],     desc: "Белая футболка с принтом на спине.", photo: "", inStock: true },
+  { id: 3, category: "Одежда",     name: "Спортивные штаны",        price: 180000, sizes: ["S","M","L"],      desc: "", photo: "", inStock: false },
+  { id: 4, category: "Обувь",      name: "Кроссовки белые",         price: 350000, sizes: ["40","41","42","43"], desc: "", photo: "", inStock: true },
+  { id: 5, category: "Аксессуары", name: "Кепка",                   price: 70000,  sizes: [],                 desc: "Один размер.", photo: "", inStock: true },
+  { id: 6, category: "Аксессуары", name: "Сумка через плечо",       price: 95000,  sizes: [],                 desc: "", photo: "", inStock: true }
+];
+/* ========================================================= */
+
+var tg = window.Telegram && window.Telegram.WebApp;
+var IN_TG = !!(tg && tg.platform && tg.platform !== "unknown");
+if (IN_TG) {
+  try {
+    tg.ready();
+    tg.expand();
+    if (tg.colorScheme) document.documentElement.setAttribute("data-theme", tg.colorScheme);
+  } catch (e) {}
+}
+/* sendData работает, только если приложение открыто кнопкой клавиатуры бота (без query_id) */
+function canSendData() {
+  return IN_TG && !(tg.initDataUnsafe && tg.initDataUnsafe.query_id);
+}
+
+var GLYPHS = {
+  "Одежда": '<path d="M30 18 L12 30 L20 46 L30 40 L30 84 L70 84 L70 40 L80 46 L88 30 L70 18 Q50 30 30 18 Z"/>',
+  "Обувь": '<path d="M8 66 L8 50 Q22 48 32 38 L40 44 Q52 36 58 34 L67 48 Q86 52 92 62 L92 70 L8 70 Z"/><path d="M8 62 L92 62"/>',
+  "Аксессуары": '<path d="M18 60 Q18 28 50 26 Q82 28 82 60 Z"/><path d="M18 60 L8 64 Q8 70 22 70 L84 70 Q94 70 94 64 L82 60"/>'
+};
+
+var state = { cat: "Все", size: {} };
+var tabsEl = document.getElementById("tabs");
+var gridEl = document.getElementById("grid");
+
+function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " сум"; }
+function code(id) { return "SC-" + String(id).padStart(3, "0"); }
+function tgLink(text) {
+  return "https://t.me/" + TG_USERNAME + (text ? "?text=" + encodeURIComponent(text) : "");
+}
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+function orderText(p, size) {
+  return "Здравствуйте! Хочу заказать: " + p.name + " (" + code(p.id) + ")" +
+    (size ? ", размер " + size : "") + ", " + fmt(p.price) + ".";
+}
+
+function categories() {
+  var list = ["Все"];
+  PRODUCTS.forEach(function (p) { if (list.indexOf(p.category) < 0) list.push(p.category); });
+  return list;
+}
+
+function renderTabs() {
+  tabsEl.innerHTML = categories().map(function (c) {
+    var count = c === "Все" ? PRODUCTS.length : PRODUCTS.filter(function (p) { return p.category === c; }).length;
+    return '<button class="tab" type="button" data-cat="' + esc(c) + '" aria-pressed="' + (c === state.cat) + '">' +
+      esc(c) + '<span class="n">' + count + '</span></button>';
+  }).join("");
+}
+
+function cardHtml(p) {
+  var size = state.size[p.id] || "";
+  var needSize = p.sizes.length > 0 && !size;
+  var tile = p.photo
+    ? '<img src="' + esc(p.photo) + '" alt="' + esc(p.name) + '">'
+    : '<svg viewBox="0 0 100 100" aria-hidden="true">' + (GLYPHS[p.category] || GLYPHS["Одежда"]) + '</svg><span class="soon">фото скоро</span>';
+  var sizes = p.sizes.length
+    ? '<div class="sizes" role="group" aria-label="Размер">' + p.sizes.map(function (s) {
+        return '<button class="size" type="button" data-id="' + p.id + '" data-size="' + esc(s) + '" aria-pressed="' + (s === size) + '">' + esc(s) + '</button>';
+      }).join("") + '</div>'
+    : "";
+  var action;
+  if (!p.inStock) {
+    action = '<a class="buy" aria-disabled="true">Нет в наличии</a>';
+  } else if (needSize) {
+    action = '<a class="buy" aria-disabled="true" data-needsize="1">Выберите размер</a>';
+  } else {
+    action = '<a class="buy" data-order="' + p.id + '" data-size="' + esc(size) + '" href="' + tgLink(orderText(p, size)) + '" target="_blank" rel="noopener">' + (IN_TG ? "Заказать" : "Заказать в Telegram") + '</a>';
+  }
+  return '<article class="card">' +
+    '<div class="tile">' + tile + '<span class="code">' + code(p.id) + '</span>' +
+    (p.inStock ? "" : '<span class="flag">нет в наличии</span>') + '</div>' +
+    '<div class="body">' +
+      '<h3 class="name">' + esc(p.name) + '</h3>' +
+      (p.desc ? '<p class="desc">' + esc(p.desc) + '</p>' : "") +
+      '<div class="price">' + fmt(p.price) + '</div>' +
+      sizes +
+      '<div class="spacer"></div>' +
+      action +
+    '</div></article>';
+}
+
+function renderGrid() {
+  var list = PRODUCTS.filter(function (p) { return state.cat === "Все" || p.category === state.cat; });
+  gridEl.innerHTML = list.length ? list.map(cardHtml).join("") : '<p class="empty">В этой категории пока ничего нет.</p>';
+}
+
+tabsEl.addEventListener("click", function (e) {
+  var b = e.target.closest(".tab");
+  if (!b) return;
+  state.cat = b.getAttribute("data-cat");
+  renderTabs(); renderGrid();
+});
+gridEl.addEventListener("click", function (e) {
+  var s = e.target.closest(".size");
+  if (s) {
+    var id = s.getAttribute("data-id"), val = s.getAttribute("data-size");
+    state.size[id] = state.size[id] === val ? "" : val;
+    renderGrid();
+    return;
+  }
+  var o = e.target.closest(".buy[data-order]");
+  if (o && IN_TG) {
+    e.preventDefault();
+    var pr = PRODUCTS.filter(function (x) { return String(x.id) === o.getAttribute("data-order"); })[0];
+    var sz = o.getAttribute("data-size") || "";
+    if (!pr) return;
+    if (canSendData()) {
+      tg.sendData(JSON.stringify({ t: "order", id: pr.id, code: code(pr.id), name: pr.name, price: pr.price, size: sz }));
+    } else {
+      tg.openTelegramLink(tgLink(orderText(pr, sz)));
+    }
+    return;
+  }
+  var d = e.target.closest('.buy[aria-disabled="true"]');
+  if (d) e.preventDefault();
+});
+
+document.getElementById("tgTop").href = tgLink("");
+document.getElementById("tgPhoto").href = tgLink("Здравствуйте! Хочу узнать цену по фото. Сейчас пришлю фото.");
+document.getElementById("tgPhoto").addEventListener("click", function (e) {
+  if (!IN_TG) return;
+  e.preventDefault();
+  if (canSendData()) tg.sendData(JSON.stringify({ t: "photo" }));
+  else tg.openTelegramLink(tgLink("Здравствуйте! Хочу узнать цену по фото. Сейчас пришлю фото."));
+});
+document.getElementById("tgFoot").textContent = "Telegram: @" + TG_USERNAME;
+renderTabs();
+renderGrid();
+</script>
+
+</body>
+</html>
